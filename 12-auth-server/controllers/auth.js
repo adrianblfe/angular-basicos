@@ -2,9 +2,6 @@ const { response } = require('express');
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
 const { generarJWT } = require('../helpers/jwt');
-const { db } = require('../models/Usuario');
-const res = require('express/lib/response');
-
 
 const crearUsuario = async(req, res = response) => {
 
@@ -39,6 +36,7 @@ const crearUsuario = async(req, res = response) => {
 			ok: true,
 			uid: dbUser.id,
 			name,
+			email,
 			token
 		});
 
@@ -68,7 +66,7 @@ const loginUsuario = async(req, res = response) => {
 		}
 
 		// Confirmar si el password hace match
-		const validPassword = bcrypt.compareSync( password, dbUser.password );
+		const validPassword = bcrypt.compareSync( password, dbUser.password, dbUser.email );
 
 		if ( ! validPassword ) {
 			return res.status(400).json({
@@ -85,6 +83,7 @@ const loginUsuario = async(req, res = response) => {
 			ok: true,
 			uid: dbUser.id,
 			name: dbUser.name,
+			email,
 			token
 		});
 
@@ -100,8 +99,9 @@ const loginUsuario = async(req, res = response) => {
 };
 
 const revalidarToken = async(req, res = response) => {
-
-	const { uid, name } = req;
+	
+	const { uid } = req;
+	const { name, email} = await Usuario.findOne({ uid });
 
 	// Generar JWT
 	const token = await generarJWT( uid, name );
@@ -110,6 +110,7 @@ const revalidarToken = async(req, res = response) => {
 		ok: true,
 		uid,
 		name,
+		email,
 		token
 	});
 
